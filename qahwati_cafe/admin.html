@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>لوحة الإدارة — دخان</title>
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body style="background:var(--bg-dark); color:#FFF;">
+  <!-- === Splash Screen === -->
+  <div id="splashScreen" class="splash-screen" style="display:flex; align-items:center; justify-content:center; background:#1C0A04;">
+    <div id="splashLottie" style="width:280px; height:280px;"></div>
+  </div>
+  <script>
+    (function() {
+      const s = document.getElementById('splashScreen');
+      if (sessionStorage.getItem('splashPlayed')) { if(s) s.style.display = 'none'; return; }
+
+      // تحميل أنيميشن Lottie المشترك المسرع
+      const anim = lottie.loadAnimation({
+        container: document.getElementById('splashLottie'),
+        renderer: 'svg',
+        loop: false,
+        autoplay: true,
+        path: 'assets/splash-animation.json'
+      });
+
+      // تسريع الحركة بمقدار 1.6x وتقليص وقت الانتظار لـ 5 ثوانٍ
+      anim.setSpeed(1.6);
+
+      setTimeout(() => {
+        if(s) {
+          s.classList.add('hidden');
+          sessionStorage.setItem('splashPlayed', 'true');
+          setTimeout(() => s.remove(), 800);
+        }
+      }, 5000);
+    })();
+  </script>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1 style="color:var(--danger)">👑 لوحة الإدارة</h1>
+      <p>دخول خاص بالمشرفين فقط</p>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" style="color:var(--text-dark)">البريد الإلكتروني</label>
+        <input type="email" id="email" class="form-control" required dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="color:var(--text-dark)">كلمة المرور</label>
+        <input type="password" id="password" class="form-control" required dir="ltr">
+      </div>
+      <button type="submit" class="btn btn-danger" style="width:100%;margin-top:10px;" id="loginBtn">دخول المستودع</button>
+      <button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;color:var(--text-dark);" id="signUpBtn">إنشاء حساب مدير جديد</button>
+    </form>
+    <div id="loadingStatus" style="display:none; text-align:center; margin-top:15px; color:var(--text-mid); font-size:0.9rem;">
+       <div class="spinner" style="width:20px; height:20px; margin-bottom:5px;"></div>
+       تحقق من الصلاحيات...
+    </div>
+    <div style="text-align:center;margin-top:20px;font-size:0.9rem;">
+      <a href="index.html" style="color:var(--text-mid);">العودة للرئيسية</a>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Layout -->
+<div class="dashboard-layout" id="dashboardScreen" style="display:none;">
+  
+  <aside class="sidebar" style="background:#1a0f0b">
+    <div class="sidebar-logo" style="color:var(--danger)">
+      👑 الإدارة العليا
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-item active" data-tab="cafes">
+        <i class="lucide-layout-grid"></i> كل المقاهي
+      </div>
+      <div class="sidebar-item" data-tab="banners">
+        <i class="lucide-image"></i> إعلانات الواجهة
+      </div>
+      <div class="sidebar-item" data-tab="videoAds">
+        <i class="lucide-play-circle"></i> الإعلانات المخصصة
+      </div>
+      <div class="sidebar-item" data-tab="push">
+        <i class="lucide-bell"></i> إرسال شعار ترويجي
+      </div>
+      <div class="sidebar-item" data-tab="ads">
+        <i class="lucide-dollar-sign"></i> إعدادات الإعلانات
+      </div>
+      <div class="sidebar-item" data-tab="bookings">
+        <i class="lucide-calendar-check"></i> الحجوزات العامة
+      </div>
+      <div class="sidebar-item" data-tab="appSettings">
+        <i class="lucide-settings"></i> إعدادات التطبيق
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-outline" style="width:100%;border-color:rgba(255,255,255,0.3);color:#FFF;" onclick="doSignOut()">
+        <i class="lucide-log-out" style="font-size:1.1rem;margin-left:8px;"></i> تسجيل خروج
+      </button>
+    </div>
+  </aside>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="bottom-nav" style="background:#1a0f0b; border-color:rgba(255,255,255,0.1);">
+    <div class="bottom-nav-item active" data-tab="cafes">
+      <i class="lucide-layout-grid"></i>
+      <span>المقاهي</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="banners">
+      <i class="lucide-image"></i>
+      <span>الإعلانات</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="videoAds">
+      <i class="lucide-play-circle"></i>
+      <span>الإعلانات</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="push">
+      <i class="lucide-bell"></i>
+      <span>تنبيهات</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="ads">
+      <i class="lucide-dollar-sign"></i>
+      <span>الأرباح</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="bookings">
+      <i class="lucide-calendar-check"></i>
+      <span>الحجوزات</span>
+    </div>
+    <div class="bottom-nav-item logout" onclick="doSignOut()">
+      <i class="lucide-log-out"></i>
+      <span>خروج</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Cafes Section -->
+    <div id="cafesSection" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">إدارة المقاهي المشتركة</h2>
+      </div>
+      <div class="card" style="background:#2C1810; border:1px solid rgba(255,255,255,0.1)">
+        <table class="data-table" style="color:#FFF">
+          <thead>
+            <tr>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1)">المقهى</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1)">المالك (ID)</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1)">تاريخ التسجيل</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1)">الحالة</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1)">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="cafesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Banners Section -->
+    <div id="bannersSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إدارة إعلانات الواجهة (Sider)</h2>
+        <button class="btn btn-danger btn-sm" onclick="showAddBannerModal()">➕ إضافة إعلان جديد</button>
+      </div>
+      <div class="grid" id="bannersGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;">
+        <!-- Banners will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Custom Ads Section -->
+    <div id="videoAdsSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إدارة الإعلانات المخصصة (Custom Ads)</h2>
+        <button class="btn btn-danger btn-sm" onclick="showAddAdModal()">➕ إضافة إعلان مخصص</button>
+      </div>
+      <div class="grid" id="videoAdsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+        <!-- Ads will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Push Section -->
+    <div id="pushSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إرسال شعار (Push Notification)</h2>
+      </div>
+      <div class="card" style="background:#2C1810; padding:30px; border:1px solid rgba(255,255,255,0.1)">
+        <div class="form-group">
+          <label style="color:#A0856E">عنوان الإشعار</label>
+          <input type="text" id="pushTitle" class="form-control" placeholder="مثلاً: عرض خاص اليوم!" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)">
+        </div>
+        <div class="form-group" style="margin-top:15px;">
+          <label style="color:#A0856E">نص الإشعار</label>
+          <textarea id="pushBody" class="form-control" rows="4" placeholder="اكتب محتوى الرسالة هنا..." style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)"></textarea>
+        </div>
+        <button class="btn btn-danger" onclick="sendPushNotification()" style="margin-top:20px; width:100%;">🚀 إرسال التنبيه لكل المستخدمين</button>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-top:10px; text-align:center;">
+          * سيتم إرسال هذا التنبيه لكل شخص قام بتثبيت التطبيق على هاتفه.
+        </p>
+      </div>
+
+      <div class="section-header" style="margin-top:30px;">
+        <h2 class="section-title">سجل التنبيهات السابقة للتتثبت</h2>
+      </div>
+      <div class="card" style="background:#2C1810; border:1px solid rgba(255,255,255,0.1)">
+        <table class="data-table" style="color:#FFF; width:100%;">
+          <thead>
+            <tr>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1); padding:12px; text-align:right;">نص الرسالة المرسلة</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1); padding:12px; text-align:right;">تاريخ الإرسال</th>
+              <th style="color:#A0856E; border-bottom:1px solid rgba(255,255,255,0.1); padding:12px; text-align:right;">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="announcementsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Ads Section -->
+    <div id="adsSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إعدادات الإعلانات (Google AdMob)</h2>
+      </div>
+      <div class="card" style="background:#2C1810; padding:30px; border:1px solid rgba(255,255,255,0.1)">
+         <div class="form-group">
+           <label style="color:#A0856E">حالة الإعلانات الفرانشايز (تفعيل/تعطيل)</label>
+           <select id="adEnabled" class="form-control" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); padding:10px; width:100%; border-radius:8px;">
+             <option value="true">مفعلة (سيتم ظهور AdMob في التطبيق)</option>
+             <option value="false">معطلة (لن تظهر أي إعلانات)</option>
+           </select>
+         </div>
+         <div class="form-group" style="margin-top:15px;">
+           <label style="color:#A0856E">معرف وحدة إعلان البانر (Ad Unit ID)</label>
+           <input type="text" id="adBannerId" class="form-control" placeholder="ca-app-pub-xxxxxxxx/" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); padding:10px; width:100%; border-radius:8px; box-sizing:border-box;">
+           <p style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:5px;">يفضل وضع الرمز المخصص الخاص بك لتبدأ أرباحك في الحساب</p>
+         </div>
+         <button class="btn btn-success" onclick="saveAdSettings()" style="margin-top:20px; width:100%;">حفظ إعدادات AdMob</button>
+      </div>
+    </div>
+
+    <!-- Bookings Section -->
+    <div id="bookingsSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إحصائيات الحجوزات العامة</h2>
+      </div>
+      <div class="card" style="background:#2C1810; border:1px solid rgba(255,255,255,0.1)">
+        <table class="data-table" style="color:#FFF">
+          <thead>
+            <tr>
+              <th style="color:#A0856E">المقهى</th>
+              <th style="color:#A0856E">الزبون</th>
+              <th style="color:#A0856E">الوقت</th>
+              <th style="color:#A0856E">الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="globalBookingsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- App Settings Section -->
+    <div id="appSettingsSection" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إعدادات التطبيق (الدعم والخصوصية)</h2>
+      </div>
+      <div class="card" style="background:#2C1810; padding:30px; border:1px solid rgba(255,255,255,0.1)">
+        <div class="form-group">
+          <label style="color:#A0856E">هاتف الدعم الفني</label>
+          <input type="text" id="supportPhone" class="form-control" placeholder="07XXXXXXXXX" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)">
+        </div>
+        <div class="form-group" style="margin-top:15px;">
+          <label style="color:#A0856E">البريد الإلكتروني للدعم</label>
+          <input type="email" id="supportEmail" class="form-control" placeholder="support@dukhan.app" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)">
+        </div>
+        <button class="btn btn-danger" onclick="saveSupportSettings()" style="margin-top:20px; width:100%;">حفظ إعدادات الدعم</button>
+        
+        <div style="margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+          <h3 style="color:var(--danger); margin-bottom:15px; font-size:1.1rem;">تخصيص الواجهة الرئيسية</h3>
+          
+          <div class="form-group">
+            <label style="color:#A0856E">العنوان الرئيسي</label>
+            <input type="text" id="heroTitleInput" class="form-control" placeholder="مثال: اكتشف أفضل المقاهي" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)">
+          </div>
+          <div class="form-group" style="margin-top:15px;">
+            <label style="color:#A0856E">النص الفرعي</label>
+            <input type="text" id="heroSubtitleInput" class="form-control" placeholder="مثال: تصفح قوائم المقاهي والعروض..." style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)">
+          </div>
+
+          <div class="form-group" style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
+            <label style="color:#A0856E">صورة الخلفية</label>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+              <input type="file" id="heroImageInput" class="form-control" accept="image/*" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); flex:1;">
+              <button class="btn btn-outline" onclick="uploadHeroImage()" id="uploadHeroBtn" style="color:#FFF; border-color:rgba(255,255,255,0.3);">رفع الخلفية</button>
+            </div>
+            <img id="heroImagePreview" style="margin-top:15px; width:100%; max-height:200px; object-fit:cover; border-radius:12px; display:none; border:1px solid rgba(255,255,255,0.1);">
+            <button class="btn btn-outline btn-sm" id="removeHeroBtn" onclick="removeHeroImage()" style="margin-top:10px; display:none; color:var(--danger); border-color:var(--danger); width:100%;">حذف الخلفية</button>
+          </div>
+
+          <div class="form-group" style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
+            <label style="color:#A0856E">ملصق عائم (Sticker)</label>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+              <input type="file" id="heroStickerInput" class="form-control" accept="image/png, image/gif, image/webp" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); flex:1;">
+              <button class="btn btn-outline" onclick="uploadHeroSticker()" id="uploadStickerBtn" style="color:#FFF; border-color:rgba(255,255,255,0.3);">رفع الملصق</button>
+            </div>
+            <p style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-top:8px;">يفضل صورة بخلفية شفافة (PNG).</p>
+            <img id="heroStickerPreview" style="margin-top:15px; max-width:150px; display:none;">
+            <button class="btn btn-outline btn-sm" id="removeStickerBtn" onclick="removeHeroSticker()" style="margin-top:10px; display:none; color:var(--danger); border-color:var(--danger); width:100%;">حذف الملصق</button>
+          </div>
+
+          <div class="form-group" style="margin-top:15px;">
+            <label style="color:#A0856E">رابط الملصق (اختياري)</label>
+            <input type="text" id="heroStickerLinkInput" class="form-control" placeholder="مثال: cafe.html?id=123" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1)" dir="ltr">
+          </div>
+
+          <button class="btn btn-success" onclick="saveHeroTextsAndLinks()" style="margin-top:20px; width:100%;">حفظ النصوص والروابط</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Cafe Details Modal -->
+<div id="cafeDetailsOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#2C1810; border:1px solid rgba(255,255,255,0.1); width:100%; max-width:650px; border-radius:12px; padding:24px; max-height:85vh; overflow-y:auto;">
+    <h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">نظرة شاملة للمقهى</h3>
+    <div id="cafeDetailsContent" style="color:#FFF; margin-top:15px; font-size:0.95rem; line-height:1.6;">
+       <!-- content loaded dynamically -->
+    </div>
+    <div style="text-align:left; margin-top:25px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+      <button class="btn btn-outline" onclick="document.getElementById('cafeDetailsOverlay').style.display='none'" style="color:#FFF;">إغلاق الشاشة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Custom Ad Modal -->
+<div id="addAdOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#2C1810; border:1px solid rgba(255,255,255,0.1); width:100%; max-width:500px; border-radius:12px; padding:24px; max-height:85vh; overflow-y:auto;">
+    <h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">إضافة إعلان مخصص جديد</h3>
+    <form id="addAdForm" onsubmit="saveCustomAd(event)">
+      <div class="form-group">
+        <label style="color:#A0856E">عنوان الإعلان</label>
+        <input type="text" id="adTitle" class="form-control" required style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; box-sizing:border-box; padding:10px; border-radius:8px;">
+      </div>
+      <div class="form-group" style="margin-top:15px;">
+        <label style="color:#A0856E">نوع الإعلان</label>
+        <select id="adTypeSelect" class="form-control" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; padding:10px; border-radius:8px;" onchange="onAdTypeChange()">
+          <option value="banner">إعلان بانر (Banner Ad)</option>
+          <option value="interstitial">إعلان بيني (Interstitial Ad)</option>
+          <option value="native">إعلان مدمج (Native Ad)</option>
+          <option value="app_open">إعلان فتح التطبيق (App Open Ad)</option>
+          <option value="video">إعلان فيديو (Video Ad)</option>
+          <option value="playable">إعلان تفاعلي (Playable Ad)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:15px;">
+        <label style="color:#A0856E">نوع الوسائط</label>
+        <select id="adMediaSelect" class="form-control" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; padding:10px; border-radius:8px;" onchange="onMediaSelectChange()">
+          <option value="image">صورة (PNG, JPG, WebP)</option>
+          <option value="video">ملف فيديو (MP4)</option>
+          <option value="html">رابط تفاعلي خارجي (HTML Link)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:15px;" id="adFileUploadGroup">
+        <label style="color:#A0856E" id="adFileLabel">ملف الإعلان</label>
+        <input type="file" id="adFileInput" class="form-control" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; box-sizing:border-box;">
+      </div>
+      <div class="form-group" style="margin-top:15px; display:none;" id="adPlayableUrlGroup">
+        <label style="color:#A0856E">رابط الإعلان التفاعلي (URL)</label>
+        <input type="text" id="adPlayableUrlInput" class="form-control" placeholder="https://example.com/game" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; box-sizing:border-box; padding:10px; border-radius:8px;" dir="ltr">
+      </div>
+      <div class="form-group" style="margin-top:15px;">
+        <label style="color:#A0856E">رابط النقر (عند ضغط الزبون على الإعلان - اختياري)</label>
+        <input type="text" id="adClickUrl" class="form-control" placeholder="مثال: cafe.html?id=123" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; box-sizing:border-box; padding:10px; border-radius:8px;" dir="ltr">
+      </div>
+      <div class="form-group" style="margin-top:15px;">
+        <label style="color:#A0856E">زمن عرض البنر بالثواني (اختياري - الافتراضي 5 ثوانٍ)</label>
+        <input type="number" id="adSlideDuration" class="form-control" value="5" min="1" max="60" style="background:rgba(255,255,255,0.05); color:#FFF; border-color:rgba(255,255,255,0.1); width:100%; box-sizing:border-box; padding:10px; border-radius:8px;">
+      </div>
+      
+      <div style="text-align:left; margin-top:25px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn btn-outline" onclick="closeAddAdModal()" style="color:#FFF;">إلغاء</button>
+        <button type="submit" class="btn btn-danger" id="saveAdBtn">حفظ ونشر الإعلان</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

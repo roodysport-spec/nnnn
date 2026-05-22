@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مدير دخان — إدارة المقهى</title>
+  <link rel="manifest" href="manifest-manager.json">
+  <link rel="apple-touch-icon" href="icons/icon-manager.png">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body>
+  <!-- === Splash Screen === -->
+  <div id="splashScreen" class="splash-screen" style="display:flex; align-items:center; justify-content:center; background:#1C0A04;">
+    <div id="splashLottie" style="width:280px; height:280px;"></div>
+  </div>
+  <script>
+    (function() {
+      const s = document.getElementById('splashScreen');
+      if (sessionStorage.getItem('splashPlayed')) { s.style.display = 'none'; return; }
+
+      // تحميل أنيميشن Lottie المشترك المسرع
+      const anim = lottie.loadAnimation({
+        container: document.getElementById('splashLottie'),
+        renderer: 'svg',
+        loop: false,
+        autoplay: true,
+        path: 'assets/splash-animation.json'
+      });
+
+      // تسريع الحركة بمقدار 1.6x وتقليص وقت الانتظار لـ 5 ثوانٍ
+      anim.setSpeed(1.6);
+
+      setTimeout(() => {
+        s.classList.add('hidden');
+        sessionStorage.setItem('splashPlayed', 'true');
+        setTimeout(() => s.remove(), 800);
+      }, 5000);
+    })();
+  </script>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>بوابة المالك</h1>
+      <p>أدخل بيانات الدخول للتحكم بمقهاك</p>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" id="email" class="form-control" required dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <input type="password" id="password" class="form-control" required dir="ltr">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;" id="loginBtn">تسجيل الدخول</button>
+    </form>
+    <div style="text-align:center;margin-top:15px;font-size:0.85rem;">
+      ليس لديك حساب؟ <a href="javascript:void(0)" onclick="openRegisterModal()" style="color:var(--accent); font-weight:bold;">أنشئ حساباً جديداً الآن</a>
+    </div>
+    <div style="text-align:center;margin-top:20px;font-size:0.9rem;">
+      <a href="index.html" style="color:var(--text-mid);">العودة للرئيسية</a>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Layout -->
+<div class="dashboard-layout" id="dashboardScreen" style="display:none;">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      دخان
+      <span id="sidebarCafeName">بوابة المالك</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-item active" data-tab="menu">
+        <i class="lucide-coffee"></i> المنيو والمنتجات
+      </div>
+      <div class="sidebar-item" data-tab="offers">
+        <i class="lucide-flame"></i> العروض
+      </div>
+      <div class="sidebar-item" data-tab="settings">
+        <i class="lucide-settings"></i> إعدادات المقهى
+      </div>
+      <div class="sidebar-item" data-tab="bookings">
+        <i class="lucide-calendar-check"></i> الحجوزات
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-outline" style="width:100%;border-color:rgba(255,255,255,0.3);color:#FFF;margin-bottom:8px;" onclick="doSignOut()">
+        <i class="lucide-log-out" style="font-size:1.1rem;margin-left:8px;"></i> تسجيل خروج
+      </button>
+      <button class="btn btn-outline" style="width:100%;border-color:#ff4d4d;color:#ff4d4d;background:rgba(255,77,77,0.1);" onclick="doDeleteAccount()">
+        <i class="lucide-trash-2" style="font-size:1.1rem;margin-left:8px;"></i> حذف الحساب نهائياً
+      </button>
+    </div>
+  </aside>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-item active" data-tab="menu">
+      <i class="lucide-coffee"></i>
+      <span>المنيو</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="offers">
+      <i class="lucide-flame"></i>
+      <span>العروض</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="settings">
+      <i class="lucide-settings"></i>
+      <span>الإعدادات</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="bookings">
+      <i class="lucide-calendar-check"></i>
+      <span>الحجوزات</span>
+    </div>
+    <div class="bottom-nav-item logout" onclick="doSignOut()">
+      <i class="lucide-log-out"></i>
+      <span>خروج</span>
+    </div>
+    <div class="bottom-nav-item" style="color:#ff4d4d;" onclick="doDeleteAccount()">
+      <i class="lucide-trash-2"></i>
+      <span>حذف</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statProducts">0</div>
+        <div class="stat-label">إجمالي المنتجات</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statOffers">0</div>
+        <div class="stat-label">العروض النشطة</div>
+      </div>
+    </div>
+
+    <!-- Menu Tab -->
+    <section id="tab-menu" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">إدارة المنيو</h2>
+        <button class="btn btn-primary" onclick="openProductModal()">+ إضافة منتج جديد</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th width="80">الصورة</th>
+              <th>اسم المنتج</th>
+              <th>القسم</th>
+              <th>السعر</th>
+              <th>الحالة</th>
+              <th width="120">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Offers Tab -->
+    <section id="tab-offers" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إدارة العروض</h2>
+        <button class="btn btn-accent" onclick="openOfferModal()">+ إضافة عرض جديد</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th width="120">الصورة</th>
+              <th>العنوان</th>
+              <th>التاريخ</th>
+              <th>الحالة</th>
+              <th width="120">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="offersTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Settings Tab -->
+    <section id="tab-settings" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إعدادات المقهى</h2>
+      </div>
+      <div class="card" style="max-width:600px;">
+        <div class="card-body">
+          <form id="cafeForm">
+            <div class="form-group">
+              <label class="form-label">اسم المقهى</label>
+              <input type="text" id="cafeNameInput" class="form-control" required lang="ar" inputmode="text">
+            </div>
+            <div class="form-group">
+              <label class="form-label">نوع المقهى</label>
+              <select id="cafeDescInput" class="form-control">
+                <option value="رجال فقط">رجال فقط</option>
+                <option value="مختلط">مختلط</option>
+              </select>
+            </div>
+            
+            <div style="display:flex;gap:20px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">العنوان (المدينة، المنطقة) <small>(اختياري)</small></label>
+                <input type="text" id="cafeAddressInput" class="form-control" placeholder="مثال: بغداد، الكرادة..." lang="ar" inputmode="text">
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">رابط خرائط جوجل (Map URL) <small>(اختياري)</small></label>
+                <input type="url" id="cafeMapInput" class="form-control" dir="ltr" placeholder="https://maps.google.com/...">
+              </div>
+            </div>
+            
+            <div style="display:flex;gap:20px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">رقم الهاتف <small>(اختياري)</small></label>
+                <input type="text" id="cafePhoneInput" class="form-control" dir="ltr" placeholder="07...">
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">أوقات العمل <small>(اختياري)</small></label>
+                <input type="text" id="cafeHoursInput" class="form-control" placeholder="مثال: 08:00 ص - 11:00 م" lang="ar" inputmode="text">
+              </div>
+            </div>
+            
+            <div style="display:flex;gap:20px;align-items:flex-end;margin-bottom:15px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">إحداثيات الموقع الحالي <small>(لترتيب المسافة للزبائن)</small></label>
+                <div style="display:flex;gap:10px;">
+                  <input type="text" id="cafeLatInput" class="form-control" placeholder="خط العرض (Lat)" readonly style="background:#f0f0f0;">
+                  <input type="text" id="cafeLngInput" class="form-control" placeholder="خط الطول (Lng)" readonly style="background:#f0f0f0;">
+                </div>
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-secondary" id="captureLocationBtn" style="padding: 10px 15px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer;">📍 تحديد موقعي الآن</button>
+              </div>
+            </div>
+            
+            <div style="display:flex;gap:20px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">صورة الغلاف (Cover)</label>
+                <label class="img-upload">
+                  <input type="file" id="coverUpload" accept="image/*" onchange="previewImg(this, 'coverPreview')">
+                  <div>اختر صورة الغلاف</div>
+                  <img id="coverPreview" class="preview" style="display:none;">
+                </label>
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">الفيديو التعريفي (فيديو للمكان)</label>
+                <label class="img-upload" style="border-style: solid; border-color: var(--accent);">
+                  <input type="file" id="promoVideoUpload" accept="video/*" onchange="previewVideo(this, 'promoVideoPreview')">
+                  <div id="videoUploadStatus">اختر فيديو للمكان (برومو)</div>
+                  <video id="promoVideoPreview" class="preview" style="display:none; width:100%; height:120px; object-fit:cover;" muted controls></video>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:20px;">
+              <label class="form-label" style="margin-bottom:15px;">مميزات المقهى (تظهر للزبائن)</label>
+              <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:15px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" class="feature-check" value="parking"> كراج مجاني
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" class="feature-check" value="wifi"> واي فاي
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" class="feature-check" value="fast_service"> خدمة سريعة
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" class="feature-check" value="tv"> شاشة
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" class="feature-check" value="ac"> مكان بارد
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:20px;">
+              <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+                <label class="toggle">
+                  <input type="checkbox" id="cafeActiveToggle">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span style="font-weight:600;">ظهور المقهى للزبائن</span>
+              </label>
+            </div>
+
+            <div id="uploadProgressContainer" style="display:none; margin-top:20px; background:rgba(0,0,0,0.05); border-radius:10px; padding:12px; border:1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem; font-weight:700;">
+                <span id="uploadStatusText">جاري الرفع...</span>
+                <span id="uploadPercentage">0%</span>
+              </div>
+              <div style="width:100%; height:8px; background:var(--border); border-radius:4px; overflow:hidden;">
+                <div id="uploadProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--accent), var(--success)); transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success" id="saveCafeBtn" style="margin-top:20px;">حفظ التغييرات</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bookings Tab -->
+    <section id="tab-bookings" class="tab-content" style="display:none;">
+      <div class="section-header">
+        <h2 class="section-title">إدارة الحجوزات</h2>
+        <div class="badge badge-primary" id="pendingBookingsBadge">0 طلبات جديدة</div>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>الزبون</th>
+              <th>رقم الهاتف</th>
+              <th>الوقت</th>
+              <th>الحالة</th>
+              <th width="150">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:30px;opacity:0.6;">لا توجد حجوزات حالياً</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Global Data Loader -->
+<div id="globalLoader" class="global-loader" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#FFF; backdrop-filter:blur(5px);">
+  <div class="spinner" style="width:50px; height:50px; border-width:4px;"></div>
+  <p style="margin-top:20px; font-weight:bold; letter-spacing:1px;">جارٍ تحميل البيانات...</p>
+  <button id="forceEnterBtn" class="btn btn-outline" style="margin-top:20px; display:none; color:#FFF; border-color:rgba(255,255,255,0.3);" onclick="document.getElementById('globalLoader').style.display = 'none'; document.getElementById('dashboardScreen').style.display = 'flex';">
+    دخول اضطراري (تجاوز التعليق)
+  </button>
+</div>
+
+<script>
+  // Show force enter button after 6 seconds of global loader visibility
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === "style") {
+        const loader = document.getElementById('globalLoader');
+        const btn = document.getElementById('forceEnterBtn');
+        if (loader.style.display === 'flex') {
+          setTimeout(() => { if(loader.style.display === 'flex') btn.style.display = 'inline-block'; }, 6000);
+        } else {
+          btn.style.display = 'none';
+        }
+      }
+    });
+  });
+  observer.observe(document.getElementById('globalLoader'), { attributes: true });
+</script>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="productModal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="productModalTitle">إضافة منتج</div>
+      <button class="modal-close" onclick="closeModal('productModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="productForm">
+        <input type="hidden" id="prodId">
+        <input type="hidden" id="prodOldImg">
+        <div class="form-group">
+          <label class="form-label">صورة المنتج</label>
+          <label class="img-upload" style="padding:16px;">
+            <input type="file" id="prodImg" accept="image/*" onchange="previewImg(this, 'prodImgPreview')">
+            <div>اضغط لرفع صورة</div>
+            <img id="prodImgPreview" class="preview" style="display:none;max-height:100px;">
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم المنتج</label>
+          <input type="text" id="prodName" class="form-control" required lang="ar" inputmode="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">وصف المنتج (اختياري)</label>
+          <textarea id="prodDesc" class="form-control" lang="ar" rows="2" placeholder="مثال: خلطة خاصة مميزة..."></textarea>
+        </div>
+        <div style="display:flex;gap:16px;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">السعر (د.ع)</label>
+            <input type="number" id="prodPrice" class="form-control" required min="250" step="250">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">القسم</label>
+            <select id="prodCategory" class="form-control" required></select>
+          </div>
+        </div>
+        <div style="display:flex;gap:30px;margin-top:10px;">
+          <div class="form-group" style="margin-top:10px;">
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+              <label class="toggle">
+                <input type="checkbox" id="prodAvailable" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-weight:600;">متاح للطلب</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">حجم العرض</label>
+            <div style="display:flex;gap:15px;margin-top:8px;">
+              <label style="cursor:pointer;display:flex;align-items:center;gap:5px;">
+                <input type="radio" name="prodSize" value="small" checked> عادي
+              </label>
+              <label style="cursor:pointer;display:flex;align-items:center;gap:5px;">
+                <input type="radio" name="prodSize" value="large"> كبير ✨
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('productModal')">إلغاء</button>
+      <button class="btn btn-primary" id="saveProductBtn" onclick="saveProduct()">حفظ المنتج</button>
+    </div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal-overlay" id="registerModal" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">إنشاء حساب جديد</div>
+      <button class="modal-close" onclick="closeModal('registerModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label">البريد الإلكتروني</label>
+          <input type="email" id="regEmail" class="form-control" required dir="ltr">
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <input type="password" id="regPassword" class="form-control" required dir="ltr" minlength="6">
+        </div>
+        <button type="submit" class="btn btn-accent" style="width:100%;" id="regBtn">إنشاء الحساب</button>
+        <p style="font-size:0.75rem; color:var(--text-mid); text-align:center; margin-top:14px; line-height:1.6;">
+          بالضغط على "إنشاء الحساب" فأنت توافق على
+          <a href="javascript:void(0)" onclick="closeModal('registerModal'); openPrivacy()" style="color:var(--accent); font-weight:bold;">سياسة الخصوصية</a>
+          و
+          <a href="javascript:void(0)" onclick="closeModal('registerModal'); openTerms()" style="color:var(--accent); font-weight:bold;">شروط الاستخدام</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Add Offer Modal -->
+<div class="modal-overlay" id="offerModal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="offerModalTitle">إضافة عرض</div>
+      <button class="modal-close" onclick="closeModal('offerModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="offerForm">
+        <input type="hidden" id="offerId">
+        <input type="hidden" id="offerOldImg">
+        <div class="form-group">
+          <label class="form-label">صورة العرض (تظهر كبانر 16:5)</label>
+          <label class="img-upload" style="padding:16px;">
+            <input type="file" id="offerImg" accept="image/*" onchange="previewImg(this, 'offerImgPreview')">
+            <div>اضغط لرفع صورة العرض</div>
+            <img id="offerImgPreview" class="preview" style="display:none;width:100%;max-height:120px;object-fit:cover;">
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">عنوان العرض (اختياري)</label>
+          <input type="text" id="offerTitle" class="form-control" lang="ar" inputmode="text">
+        </div>
+        <div style="display:flex;gap:16px;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">تاريخ البداية</label>
+            <input type="date" id="offerStart" class="form-control">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">تاريخ النهاية</label>
+            <input type="date" id="offerEnd" class="form-control">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <label class="toggle">
+              <input type="checkbox" id="offerActive" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-weight:600;">تفعيل العرض</span>
+          </label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('offerModal')">إلغاء</button>
+      <button class="btn btn-primary" id="saveOfferBtn" onclick="saveOffer()">حفظ العرض</button>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-overlay" id="privacyModal" style="display:none;">
+  <div class="modal" style="max-width:480px; max-height:80vh; overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;background:var(--bg-card);z-index:1;">
+      <div class="modal-title">🔒 سياسة الخصوصية</div>
+      <button class="modal-close" onclick="closeModal('privacyModal')">×</button>
+    </div>
+    <div class="modal-body" style="font-size:0.88rem; line-height:1.9; color:var(--text-mid);">
+      <p>آخر تحديث: مايو ٢٠٢٥</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">١. البيانات التي نجمعها</h3>
+      <p>نقوم بجمع البريد الإلكتروني وكلمة المرور اللازمَين لتسجيل الدخول، وكذلك بيانات المقهى التي تُدخلها طوعاً (الاسم، الصور، الموقع الجغرافي، أوقات العمل).</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٢. استخدام البيانات</h3>
+      <p>تُستخدم البيانات حصراً لتشغيل خدمة "دخان" وعرض مقهاك للزبائن داخل التطبيق. لا نبيع بياناتك لأي طرف ثالث ولا نشاركها مع أي جهة إعلانية.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٣. تخزين البيانات</h3>
+      <p>تُخزَّن بيانات الحساب بأمان على خوادم Supabase المشفرة وفق معايير ISO 27001. الصور والملفات تُخزَّن على Supabase Storage.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٤. حقوقك</h3>
+      <p>يمكنك في أي وقت طلب حذف حسابك وجميع بياناتك نهائياً من خلال زر "حذف الحساب نهائياً" في لوحة التحكم.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٥. الاتصال بنا</h3>
+      <p>لأي استفسار بخصوص الخصوصية، تواصل معنا عبر: <strong>support@dukhan.app</strong></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('privacyModal')">فهمت، إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Terms of Service Modal -->
+<div class="modal-overlay" id="termsModal" style="display:none;">
+  <div class="modal" style="max-width:480px; max-height:80vh; overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;background:var(--bg-card);z-index:1;">
+      <div class="modal-title">📋 شروط الاستخدام</div>
+      <button class="modal-close" onclick="closeModal('termsModal')">×</button>
+    </div>
+    <div class="modal-body" style="font-size:0.88rem; line-height:1.9; color:var(--text-mid);">
+      <p>آخر تحديث: مايو ٢٠٢٥</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">١. القبول بالشروط</h3>
+      <p>باستخدامك لتطبيق "دخان" فأنت توافق على الشروط الواردة في هذه الوثيقة. إن كنت لا توافق على أي منها فيرجى التوقف عن استخدام الخدمة.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٢. استخدام الخدمة</h3>
+      <p>يُتاح التطبيق لأصحاب المقاهي والمطاعم الراغبين في عرض قوائمهم ومنتجاتهم للزبائن. يُحظر استخدام الخدمة لأي غرض مخالف للقانون أو الآداب العامة.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٣. المحتوى</h3>
+      <p>أنت مسؤول مسؤولية كاملة عن المحتوى الذي تنشره (صور، أسماء، أسعار). يجب أن يكون المحتوى دقيقاً وغير مضلل.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٤. الاشتراك والرسوم</h3>
+      <p>الخدمة الأساسية مجانية. قد تُضاف خدمات مدفوعة مستقبلاً مع إشعار مسبق للمستخدمين.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٥. إنهاء الخدمة</h3>
+      <p>نحتفظ بالحق في إيقاف الحسابات المخالفة للشروط. كما يمكنك أنت حذف حسابك في أي وقت.</p>
+
+      <h3 style="color:var(--text-dark); margin-top:16px;">٦. التعديلات</h3>
+      <p>قد نُعدّل هذه الشروط من حين لآخر. سيُبلَّغ المستخدمون الفاعلون بأي تغييرات جوهرية.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('termsModal')">فهمت، إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/owner.js"></script>
+</body>
+</html>

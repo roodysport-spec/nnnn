@@ -1,0 +1,21 @@
+{
+  "name": "مدير دخان — إدارة المقاهي",
+  "short_name": "مدير دخان",
+  "start_url": "owner.html",
+  "display": "standalone",
+  "background_color": "#1C0A04",
+  "theme_color": "#D4AF37",
+  "description": "تطبيق إدارة المقاهي لمنصة دخان",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

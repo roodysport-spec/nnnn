@@ -1,0 +1,157 @@
+workflows:
+  customer-app-ios:
+    name: Build Dukhan Customer (iOS Simulator)
+    instance_type: mac_mini_m1
+    environment:
+      java: 21
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npm install @capacitor/assets --save-dev
+      - name: Build Web Project
+        script: |
+          npm run build:customer
+      - name: Generate App Assets
+        script: |
+          mkdir -p assets
+          cp assets/app-icon.png assets/icon-only.png
+          cp assets/app-icon.png assets/splash.png
+          npx capacitor-assets generate --android
+      - name: Capacitor Setup
+        script: |
+          rm -rf ios
+          npx cap add ios
+          npx cap sync ios || echo "Sync finished with potential Podfile warning, continuing..."
+      - name: Build iOS for Simulator
+        script: |
+          # Try building with .xcworkspace, if not found use .xcodeproj (SPM style)
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            WORKSPACE_ARG="-workspace ios/App/App.xcworkspace"
+          else
+            WORKSPACE_ARG="-project ios/App/App.xcodeproj"
+          fi
+          
+          xcodebuild $WORKSPACE_ARG \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -derivedDataPath build \
+            clean build
+    artifacts:
+      - build/Build/Products/Debug-iphonesimulator/*.app
+
+  customer-app-android:
+    name: Build Dukhan Customer (Android)
+    instance_type: mac_mini_m1
+    environment:
+      java: 21
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npm install @capacitor/assets --save-dev
+      - name: Build Web Project
+        script: |
+          npm run build:customer
+      - name: Generate App Assets
+        script: |
+          mkdir -p assets
+          cp assets/app-icon.png assets/icon-only.png
+          cp assets/app-icon.png assets/splash.png
+          npx capacitor-assets generate --android
+      - name: Capacitor Setup
+        script: |
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+      - name: Build Android APK
+        script: |
+          cd android && ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+
+  owner-app-ios:
+    name: Build Dukhan Manager (iOS Simulator)
+    instance_type: mac_mini_m1
+    environment:
+      java: 21
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npm install @capacitor/assets --save-dev
+      - name: Build Web Project
+        script: |
+          npm run build:owner
+      - name: Prepare Owner Config
+        script: |
+          cp capacitor.config.owner.json capacitor.config.json
+      - name: Generate App Assets
+        script: |
+          mkdir -p assets
+          cp assets/app-icon.png assets/icon-only.png
+          cp assets/app-icon.png assets/splash.png
+          npx capacitor-assets generate --android
+      - name: Capacitor Setup
+        script: |
+          rm -rf ios
+          npx cap add ios
+          npx cap sync ios || echo "Sync finished with potential Podfile warning, continuing..."
+      - name: Build iOS for Simulator
+        script: |
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            WORKSPACE_ARG="-workspace ios/App/App.xcworkspace"
+          else
+            WORKSPACE_ARG="-project ios/App/App.xcodeproj"
+          fi
+
+          xcodebuild $WORKSPACE_ARG \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -derivedDataPath build \
+            clean build
+    artifacts:
+      - build/Build/Products/Debug-iphonesimulator/*.app
+
+  owner-app-android:
+    name: Build Dukhan Manager (Android)
+    instance_type: mac_mini_m1
+    environment:
+      java: 21
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npm install @capacitor/assets --save-dev
+      - name: Build Web Project
+        script: |
+          npm run build:owner
+      - name: Prepare Owner Config
+        script: |
+          cp capacitor.config.owner.json capacitor.config.json
+      - name: Generate App Assets
+        script: |
+          mkdir -p assets
+          cp assets/app-icon.png assets/icon-only.png
+          cp assets/app-icon.png assets/splash.png
+          npx capacitor-assets generate --android
+      - name: Capacitor Setup
+        script: |
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+      - name: Build Android APK
+        script: |
+          cd android && ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk

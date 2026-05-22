@@ -1,0 +1,8 @@
+{
+  "appId": "com.dukhan.owner",
+  "appName": "Dukhan Manager",
+  "webDir": "dist",
+  "ios": {
+    "useSPM": true
+  }
+}

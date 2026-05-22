@@ -1,0 +1,179 @@
+/* qahwati_logic.js - النسخة النهائية المطورة (Premium Customer Experience) */
+const SUPABASE_URL = 'https://tvtineaabsgnlduqflsf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cyvVJFYtMvxwS2sdF-CCrw_M_zvCFid';
+let sb;
+let userCoords = null;
+
+function initSb() {
+    if (typeof supabase === 'undefined') return false;
+    if (!sb) sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return true;
+}
+
+// الحصول على الموقع وتحديث المسافات
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        loadHomeData(); 
+    }, err => console.log('Location access denied'));
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return (R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))).toFixed(1);
+}
+
+async function loadHomeData() {
+    let tries = 0;
+
+    while (!initSb() && tries < 15) {
+        await new Promise(r => setTimeout(r, 400));
+        tries ++;
+    }
+
+    if (!sb) return;
+
+    try {
+        const {
+            data: cafes
+        }
+
+        = await sb.from('cafes').select('*').eq('is_active', true);
+        const grid = document.getElementById('cafesGrid');
+
+        if (grid) {
+            grid.innerHTML = (cafes || []).map(c => {
+                const dist = userCoords ? calculateDistance(userCoords.lat, userCoords.lng, c.latitude, c.longitude) : null;
+                return `
+                <div class="cafe-card" style="padding:0; background:white; margin-bottom:20px; border-radius:20px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.06); cursor:pointer;" onclick="location.href='/cafe/${c.id}'">
+                    <div style="height:150px; background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)), url('${c.hero_image || ''}') center/cover;"></div>
+                    <div style="padding:18px; position:relative;">
+                        <img src="${c.logo_url || ''}" style="width:70px; height:70px; border-radius:18px; border:4px solid white; position:absolute; top:-45px; right:20px; box-shadow:0 4px 8px rgba(0,0,0,0.1); object-fit:cover;">
+                        <div style="font-weight:bold; font-size:1.3rem; margin-top:10px; color:#2C1810;">${c.name}</div>
+                        <div style="font-size:0.9rem; color:#666; margin:8px 0; line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;">${c.description || ''}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; border-top:1px solid #fcfcfc; padding-top:12px;">
+                            <span style="font-size:0.85rem; background:#FFF5EB; color:#E67E22; padding:5px 14px; border-radius:30px; font-weight:bold;">📍 ${dist ? dist + ' كم' : '...'}</span>
+                            <span style="font-size:0.85rem; color:#AAA;">${c.address || ''}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    catch (e) {
+        console .error(e);
+    }
+}
+
+async function loadCafePage(id) {
+    let tries = 0;
+
+    while (!initSb() && tries < 15) {
+        await new Promise(r => setTimeout(r, 400));
+        tries ++;
+    }
+
+    if (!sb) return;
+
+    try {
+        const {
+            data: cafe
+        }
+
+        = await sb.from('cafes').select('*').eq('id', id).single();
+
+        if (cafe) {
+            const h = document.getElementById('cafeHero');
+
+            if (h) {
+                h .style.backgroundImage = `linear-gradient(rgba(0,0,0,0.2), rgba(0,10,20,0.8)), url('${cafe.hero_image || ''}')`;
+            }
+
+            document .getElementById('cafeName').innerText = cafe.name;
+            document .getElementById('cafePhone').innerHTML = ` <div style="display:flex; align-items:center; gap:12px;"> <img src="${cafe.logo_url || ''}" style="width:60px; height:60px; border-radius:15px; border:3px solid white; object-fit:cover;"> <div> <div style="font-weight:bold; font-size:1.15rem;">$
+
+{
+    cafe .address || ''
+}
+
+</div >
+<div style="color:rgba(255,255,255,0.8); font-size:0.95rem;" > 📞 $ {
+    cafe .phone || ''
+}
+
+</div >
+</div >
+</div > `;
+
+if (cafe.latitude && cafe.longitude) {
+    const navBtn = document.createElement('a');
+
+    navBtn.href = `https://www.google.com/maps/dir/?api=1&destination=$ {
+        cafe .latitude
+    }
+
+    , $ {
+        cafe .longitude
+    }
+
+    `;
+    navBtn .target = "_blank";
+    navBtn .innerText = "🗺️ الذهاب للمقهى";
+    navBtn .style = "position:absolute; bottom:25px; left:25px; background:#E67E22; color:white; padding:10px 20px; border-radius:30px; text-decoration:none; font-weight:bold; font-size:0.95rem; box-shadow:0 6px 15px rgba(0,0,0,0.3);";
+    h .appendChild(navBtn);
+}
+
+}
+
+const [ {
+    data: cats
+}
+
+, {
+    data: products
+}
+
+, {
+    data: offers
+}
+
+] = await Promise.all([
+            sb.from('categories').select('*').eq('cafe_id', id).order('order_index'),
+            sb.from('products').select('*').eq('cafe_id', id).eq('is_available', true),
+            sb.from('offers').select('*').eq('cafe_id', id).eq('is_active', true)
+        ]);
+
+const offSection = document.getElementById('offersSection');
+if (offSection && offers && offers.length > 0) {
+    offSection .style.display = 'block';
+    offSection .innerHTML = ` <div style="padding: 0 20px; font-weight:bold; color:#2C1810; margin-bottom:15px; font-size:1.1rem; display:flex; align-items:center; gap:8px;">🔥 عروض حصرية</div> <div style="display:flex; gap:15px; overflow-x:auto; padding:0 20px 20px; scroll-snap-type: x mandatory; -ms-overflow-style:none; scrollbar-width:none;"> $
+
+{
+    offers.map(o => ` <div style="min-width:300px; height:160px; background:linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('${o.image_url || ''}') center/cover; border-radius:20px; flex-shrink:0; scroll-snap-align: center; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; color:white; box-shadow:0 6px 12px rgba(0,0,0,0.1);"> <div style="font-weight:bold; font-size:1.2rem;">${o.title}</div> <div style="font-size:0.9rem; opacity:0.95; margin-top:5px;">${o.description || ''}</div> <div style="position:absolute; top:15px; left:15px; background:#E67E22; padding:4px 12px; border-radius:12px; font-weight:bold; font-size:0.85rem; box-shadow:0 2px 4px rgba(0,0,0,0.2);">OFFER</div> </div> `).join('')
+}
+
+</div > `;
+}
+
+document.getElementById('catTabs').innerHTML = (cats || []).map(c => ` <button style="padding:12px 25px; background:white; border:1px solid #f5f5f5; border-radius:30px; white-space:nowrap; font-weight:bold; color:#2C1810; box-shadow:0 4px 8px rgba(0,0,0,0.03); cursor:pointer;"> ${c.icon || '☕'} ${c.name} </button> `).join('');
+
+document.getElementById('productsGrid').innerHTML = (products || []).map(p => ` <div style="display:flex; gap:20px; padding:18px; background:white; border-radius:22px; margin-bottom:18px; box-shadow:0 6px 18px rgba(0,0,0,0.04); align-items:center; border:1px solid #fafafa;"> <img src="${p.image_url || ''}" style="width:100px; height:100px; border-radius:18px; object-fit:cover; border:3px solid #f9f9f9;"> <div style="flex:1;"> <div style="font-weight:bold; font-size:1.15rem; color:#2C1810;">${p.name}</div> <div style="font-size:0.9rem; color:#888; margin:8px 0; line-height:1.5;">${p.description || ''}</div> <div style="font-weight:bold; color:#E67E22; font-size:1.25rem; margin-top:6px;">${p.price} د.ع</div> </div> </div> `).join('');
+}
+
+catch (e) {
+    console .error(e);
+}
+
+}
+
+function hideSplash() {
+    setTimeout(() => {
+        const s = document.getElementById('splashScreen');
+        if (s) { s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 800); }
+    }, 3500);
+}

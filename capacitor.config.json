@@ -1,0 +1,8 @@
+{
+  "appId": "com.dukhan.app",
+  "appName": "Dukhan App",
+  "webDir": "dist",
+  "ios": {
+    "useSPM": true
+  }
+}
