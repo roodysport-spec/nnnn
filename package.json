@@ -7,8 +7,8 @@
     "lib": "lib"
   },
   "scripts": {
-    "build:customer": "mkdir -p dist && cp -r *.html css js assets *.js *.json icons lib dist 2>/dev/null || echo 'Customer build done'",
-    "build:owner": "mkdir -p dist && cp -r *.html css js assets *.js *.json icons lib dist 2>/dev/null && cp dist/owner.html dist/index.html && echo 'Owner build done'",
+    "build:customer": "node build.js",
+    "build:owner": "node build.js --owner",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

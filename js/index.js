@@ -123,13 +123,11 @@ async function loadData() {
             if (bannersSec && bannersCont && bannerAds.length > 0) {
                 bannersSec.style.display = 'block';
                 
-                // Render custom banner ads inside a single cross-fade container
                 bannersCont.innerHTML = `
                     <div class="custom-banners-carousel">
                         ${bannerAds.map((b, i) => {
                             let mediaTag = '';
                             let bgTag = '';
-                            // Robust fallback if media_type is not defined or null
                             let mType = b.media_type;
                             if (!mType && b.video_url) {
                                 const ext = b.video_url.split('.').pop().toLowerCase().split('?')[0];
@@ -167,18 +165,13 @@ async function loadData() {
                     let bIdx = 0;
                     let customBannerTimeout = null;
 
-                    // Expose dynamic dot switcher to window context
                     window.switchCustomBanner = function(idx) {
                         bIdx = idx;
-                        
-                        // Toggle active class on all slides for smooth cross-fade
                         const slides = document.querySelectorAll('.custom-banners-carousel .custom-carousel-slide');
                         slides.forEach((slide, i) => {
                             if (i === bIdx) slide.classList.add('active');
                             else slide.classList.remove('active');
                         });
-                        
-                        // Update dots active class
                         const dots = document.querySelectorAll('#customBannersDots .dot');
                         dots.forEach((dot, i) => {
                             if (i === bIdx) dot.classList.add('active');
@@ -186,7 +179,6 @@ async function loadData() {
                         });
                     };
 
-                    // Auto-slide with per-banner dynamic duration
                     function startCustomBannersSlider(currentIdx) {
                         if (customBannerTimeout) clearTimeout(customBannerTimeout);
                         const currentAd = bannerAds[currentIdx];
@@ -209,7 +201,7 @@ async function loadData() {
             nativeAds = videoAds.filter(a => a.ad_type === 'native');
         }
 
-        // إعلانات البوب أب التراكبية (App Open / Interstitial / Video / Playable)
+        // إعلانات البوب أب التراكبية
         if (videoAds && videoAds.length > 0) {
             const overlayAds = videoAds.filter(a => ['app_open', 'interstitial', 'video', 'playable'].includes(a.ad_type));
             if (overlayAds.length > 0) {
@@ -225,7 +217,6 @@ async function loadData() {
                     overlay.style.display = 'flex';
                     if (badgeLabel) badgeLabel.textContent = "إعلان ممول";
                     
-                    // إخفاء كل العناصر أولاً
                     if (player) player.style.display = 'none';
                     if (imgLink) imgLink.style.display = 'none';
                     if (frameAd) frameAd.style.display = 'none';
@@ -291,7 +282,6 @@ function renderCafes(list) {
 
     let html = [];
     list.forEach((c, idx) => {
-        // إضافة كارت المقهى العادي
         html.push(`
           <a href="cafe.html?id=${c.id}" class="cafe-card">
             <div class="cafe-cover-wrap" style="position:relative;">
@@ -311,7 +301,6 @@ function renderCafes(list) {
           </a>
         `);
 
-        // حقن إعلان مدمج (Native Ad) كل 3 مقاهي بذكاء
         if ((idx + 1) % 3 === 0 && nativeAds.length > 0) {
             const adIdx = Math.floor((idx + 1) / 3 - 1) % nativeAds.length;
             const ad = nativeAds[adIdx];
@@ -381,11 +370,10 @@ function applyFilters() {
         result = result.filter(c => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q)));
     }
 
-    // فرز المقاهي المثبتة لتكون في الأعلى دائماً
     result.sort((a, b) => {
         if (a.is_pinned && !b.is_pinned) return -1;
         if (!a.is_pinned && b.is_pinned) return 1;
-        return 0; // الحفاظ على الترتيب السابق (المسافة، الأبجدية، إلخ) للمقاهي غير المثبتة
+        return 0;
     });
 
     renderCafes(result);
@@ -437,7 +425,6 @@ async function loadSupportData() {
     } catch (e) { console.error(e); }
 }
 
-// تهيئة القائمة المنسدلة (Dropdown)
 function initDropdown() {
     const dropdown = document.getElementById('filterDropdown');
     const selected = document.getElementById('dropdownSelected');
@@ -475,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // تسجيل Service Worker للـ PWA
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/js/sw.js')
+        navigator.serviceWorker.register('/sw.js')
             .then(() => console.log('✅ Service Worker registered'))
             .catch(err => console.warn('SW error:', err));
     }
@@ -503,7 +490,67 @@ const _FCM_CONFIG = {
 const _VAPID_KEY = 'BG42d5EwTKEfdJ9zDCAs6GnhxDuirNGGlPg7Ruqdb_aSgk0omD1ALsDJ9VtljQkx_mEDEPcK1NkW9r78wtSe3jc';
 
 async function initPushNotifications() {
-    // التحقق من دعم المتصفح للإشعارات
+    // ===== Capacitor (Android/iOS APK) =====
+    const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform);
+
+    if (isNative) {
+        try {
+            const { PushNotifications } = window.Capacitor.Plugins;
+            if (!PushNotifications) {
+                console.warn('PushNotifications plugin غير متاح');
+                return;
+            }
+
+            // طلب الإذن
+            const permResult = await PushNotifications.requestPermissions();
+            if (permResult.receive !== 'granted') {
+                console.log('رفض المستخدم إذن الإشعارات على الجهاز');
+                return;
+            }
+
+            // تسجيل الجهاز مع FCM
+            await PushNotifications.register();
+
+            // استقبال الـ Token وحفظه في Supabase
+            PushNotifications.addListener('registration', async ({ value: token }) => {
+                console.log('📱 Android FCM Token:', token);
+                const platform = window.Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
+                const { error } = await sb.from('push_tokens').upsert(
+                    { token, platform, updated_at: new Date().toISOString() },
+                    { onConflict: 'token' }
+                );
+                if (!error) {
+                    localStorage.setItem('dukhan_fcm_token', token);
+                    console.log(`✅ ${platform} FCM Token محفوظ بنجاح`);
+                } else {
+                    console.error('خطأ في حفظ Token:', error);
+                }
+            });
+
+            // خطأ في التسجيل
+            PushNotifications.addListener('registrationError', (err) => {
+                console.error('خطأ في تسجيل Push:', err);
+            });
+
+            // استقبال الإشعار وهو مفتوح (Foreground)
+            PushNotifications.addListener('pushNotificationReceived', (notification) => {
+                const title = notification.title || 'دخان';
+                const body  = notification.body  || '';
+                showToast(`🔔 ${title}: ${body}`, 'info');
+            });
+
+            // النقر على الإشعار
+            PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+                console.log('تم النقر على الإشعار:', action);
+            });
+
+        } catch (err) {
+            console.warn('خطأ في Capacitor Push Notifications:', err.message);
+        }
+        return; // لا تكمل لكود الويب
+    }
+
+    // ===== Web Browser (PWA) =====
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         console.log('Push Notifications غير مدعومة في هذا المتصفح');
         return;
@@ -542,7 +589,7 @@ async function initPushNotifications() {
             );
             if (!error) {
                 localStorage.setItem('dukhan_fcm_token', token);
-                console.log('✅ FCM Token محفوظ بنجاح');
+                console.log('✅ Web FCM Token محفوظ بنجاح');
             }
         }
 
@@ -554,12 +601,11 @@ async function initPushNotifications() {
         });
 
     } catch (err) {
-        console.warn('خطأ في تهيئة Push Notifications:', err.message);
+        console.warn('خطأ في تهيئة Web Push Notifications:', err.message);
     }
 }
 
 // تشغيل تهيئة الإشعارات بعد تحميل الصفحة
 document.addEventListener('DOMContentLoaded', () => {
-    // نؤخر طلب الإذن قليلاً حتى لا يتفاجأ المستخدم فور فتح التطبيق
     setTimeout(initPushNotifications, 3000);
 });
