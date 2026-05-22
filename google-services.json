@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "771948038238",
+    "project_id": "dukhan-app",
+    "storage_bucket": "dukhan-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:771948038238:android:c540a908ac68c214b84ccf",
+        "android_client_info": {
+          "package_name": "com.companyname.qahwatiapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBotpS848htbO9-hjWTXlhLsaEygtvGw2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

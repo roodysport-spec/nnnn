@@ -24,6 +24,12 @@ workflows:
           rm -rf ios
           npx cap add ios
           npx cap sync ios || echo "Sync finished with potential Podfile warning, continuing..."
+          if [ -f "GoogleService-Info.plist" ]; then
+            cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
+            echo "GoogleService-Info.plist successfully copied to ios/App/App"
+          else
+            echo "Warning: GoogleService-Info.plist not found in root directory!"
+          fi
       - name: Build iOS for Simulator
         script: |
           # Try building with .xcworkspace, if not found use .xcodeproj (SPM style)
@@ -69,6 +75,12 @@ workflows:
           rm -rf android
           npx cap add android
           npx cap sync android
+          if [ -f "google-services.json" ]; then
+            cp google-services.json android/app/google-services.json
+            echo "google-services.json successfully copied to android/app"
+          else
+            echo "Warning: google-services.json not found in root directory!"
+          fi
       - name: Build Android APK
         script: |
           cd android && ./gradlew assembleDebug
@@ -103,6 +115,12 @@ workflows:
           rm -rf ios
           npx cap add ios
           npx cap sync ios || echo "Sync finished with potential Podfile warning, continuing..."
+          if [ -f "GoogleService-Info.plist" ]; then
+            cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
+            echo "GoogleService-Info.plist successfully copied to ios/App/App"
+          else
+            echo "Warning: GoogleService-Info.plist not found in root directory!"
+          fi
       - name: Build iOS for Simulator
         script: |
           if [ -d "ios/App/App.xcworkspace" ]; then
@@ -150,6 +168,12 @@ workflows:
           rm -rf android
           npx cap add android
           npx cap sync android
+          if [ -f "google-services.json" ]; then
+            cp google-services.json android/app/google-services.json
+            echo "google-services.json successfully copied to android/app"
+          else
+            echo "Warning: google-services.json not found in root directory!"
+          fi
       - name: Build Android APK
         script: |
           cd android && ./gradlew assembleDebug
